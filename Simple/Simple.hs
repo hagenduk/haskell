@@ -29,15 +29,27 @@ fib2' n a b
 -- Folgende Reduktionsregel sind dabei anzuwenden: Wenn n gerade ist,
 -- so wird n halbiert, wenn n ungerade ist, so wird n verdreifacht und um
 -- 1 erhöht.
-    
-c       :: Integer -> Integer
-c n = undefined
+c1      :: Integer -> Integer
+c1 n = c1' n
+	where
+	c1' n
+		| n <= 0 = error "<=0"
+		| n == 1 = 0
+		| even n = 1 + c1' (div n 2)
+		| otherwise = 1+ c1' ((n* 3) +1)
+
 
 
 -- Definieren Sie ein endrekurive Variante von c
     
-c1      :: Integer -> Integer
-c1 = undefined
+c       :: Integer -> Integer
+c n = c' n 0
+	where
+	c' n x
+		| n <= 0 = error "<=0"
+		| n == 1 = x
+		| even n = c' (div n 2) (x+1)
+		| otherwise = c' ((n * 3)+1) (x+1) 
 
 
 -- Definieren Sie eine Funktion cmax, die für ein
@@ -46,7 +58,10 @@ c1 = undefined
 -- vordefinierten Funkt min und max.
 
 cmax    :: Integer -> Integer -> Integer
-cmax lb ub = undefined
+cmax lb ub
+	| lb > ub = error "falsche werte"
+	| lb == ub = (c lb)
+	| lb < ub = max (c lb) (cmax (lb +1) ub)
 
 
 -- Definieren Sie eine Funktion imax, die für ein
@@ -55,7 +70,10 @@ cmax lb ub = undefined
 -- Sie die obige Funktion cmax so um, dass sie mit imax arbeitet.
 
 imax    :: (Integer -> Integer) -> Integer -> Integer -> Integer
-imax f lb ub = undefined
+imax f lb ub
+	| lb > ub = error "falsche werte"
+	| lb == ub = (f lb)
+	| lb < ub = max (f lb) (cmax (lb +1) ub)
 
 
 cmax1   :: Integer -> Integer -> Integer
@@ -69,6 +87,11 @@ cmax1
 -- (mit einer lokalen Hilfsfunktion).
 
 imax2   :: (Integer -> Integer) -> Integer -> Integer -> (Integer, Integer)
-imax2 f lb ub = undefined
+imax2 f lb ub = imax2' f lb ub (0,0)
+		where
+		imax2' f lb ub (a,b)
+			| lb > ub = error "falsche werte"
+			| lb == ub = max ((f lb), lb) (a,b)
+			| lb < ub = imax2' f (lb+1) ub (max (a,b) ((f lb),lb))
 
 -- ----------------------------------------
