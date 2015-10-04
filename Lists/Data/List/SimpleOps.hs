@@ -20,21 +20,21 @@ import Prelude hiding (splitAt)
 
 nub :: Eq a => [a] -> [a]
 nub [] = []
-nub (x : xs) = undefined
+nub (x : xs) = x : (filter (\y -> not (y==x)) (nub xs))
 
 
 -- .2 nub with list comprehension
 
 nub' :: Eq a => [a] -> [a]
 nub' [] = []
-nub' (x : xs) = undefined
+nub' (x : xs) = x : (nub' [y |y<-xs, x/=y])
 
 
 -- .3 nub with foldr
 -- after chapter about folds
 
 nub'' :: Eq a => [a] -> [a]
-nub'' = undefined
+nub'' l = foldr (\x xs -> x : filter (/=x) xs) [] l
 
 
 -- ----------------------------------------
@@ -61,8 +61,13 @@ splitAt i xs = (take i xs, drop i xs)
 
 -- the impl
 splitAt' :: Int -> [a] -> ([a],[a])
-splitAt' = undefined
-
+aplitAt' a [] = []
+splitAt' a (x:xs)
+			| a < 0 = error "nothing selected"
+			| a == 0 = ([], (x:xs))
+			| otherwise = (x : t, d)
+			where
+				(t,d) = splitAt' (a-1) xs
 -- ----------------------------------------
 
 -- | 'intercalate' inserts the list @xs@ in between
@@ -71,12 +76,18 @@ splitAt' = undefined
 
 -- 1. impl: direct or with map
 intercalate :: [a] -> [[a]] -> [a]
-intercalate = undefined
+intercalate a [] = []
+intercalate _ (xs:[]) = xs
+intercalate a (xs:xss) = xs ++ a ++ (intercalate a xss)
 
 -- 2. impl: with foldr
 -- after chapter about folds
 intercalate' :: [a] -> [[a]] -> [a]
-intercalate' = undefined
+intercalate' _ [] = []
+intercalate' _ (xs:[]) = xs
+intercalate' a (xs:xss) = xs ++ foldr (\c d -> c ++ a ++ d) [] xss
+
+-- TODO reihenfolge muss noch überarbeitet werden
 
 -- ----------------------------------------
 
@@ -92,14 +103,23 @@ partition p xs
 
 -- 1. impl: direct
 partition' :: (a -> Bool) -> [a] -> ([a], [a])
-partition' = undefined
+partition' _ [] = ([],[])
+partition' f (x:xs)
+		| f x = (x : t, d)
+		| otherwise = (t ,x : d)
+		where
+			(t,d) = partition f xs
 
 -- 2. impl: with foldr
 -- after chapter about folds
 
 partition'' :: (a -> Bool) -> [a] -> ([a], [a])
-partition'' = undefined
-
+partition'' _ [] = ([],[])
+partition'' f l = foldr (\x (a,b) -> (a ++ fst (sub f x), b ++ snd (sub f x))) ([],[]) l
+			where
+				sub f e
+					| f e = ([e],[])
+					| otherwise = ([], [e])
 -- ----------------------------------------
 --
 -- | all prefixes of a list
@@ -107,13 +127,16 @@ partition'' = undefined
 -- 1. impl: direct
 
 inits        :: [a] -> [[a]]
-inits = undefined
+inits [] = []
+inits x = [x] ++ inits (init x)  
 
 -- 2. impl: with foldr
 -- after chapter about folds
 
 inits'        :: [a] -> [[a]]
-inits' = undefined
+inits' [] = []
+inits' x = foldr (\x xs -> [x] : (map (x:) xs)) [] x
+
 
 -- ----------------------------------------
 
@@ -128,9 +151,14 @@ inits' = undefined
 --
 
 join' :: a -> [[a]] -> [a]
-join' = undefined
+join' a = intercalate [a] 
 
 split' :: Eq a => a -> [a] -> [[a]]
-split' = undefined
+split' a [] = [[]]
+split' a (x:xs)
+		| x==a = [] : split' a xs
+		| otherwise = [[x] ++ y] ++ ys
+			where
+				(y:ys) = split' a xs
     
 -- ----------------------------------------
