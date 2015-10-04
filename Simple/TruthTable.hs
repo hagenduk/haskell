@@ -9,7 +9,10 @@ type TruthTable = [[Bool]]
 -- | generate a truth table for n variables
 
 truthTable :: Int -> TruthTable
-truthTable n = undefined
+truthTable n
+	| n == 0 = []
+	| n == 1 = [[True], [False]]
+	| otherwise = (map (True:) (truthTable (n-1))) ++ (map (False:) (truthTable (n-1)))
 
 ppTruthTable :: TruthTable -> String
 ppTruthTable tt
