@@ -106,8 +106,8 @@ instance MonadError EvalError Result where
 				  (\ e -> let RR ef' = handler e in ef' env)
 
 instance MonadReader Env Result where
-  ask             = undefined
-  local f (RR ef) = undefined
+  ask = RR $ \env -> return env
+  local f (RR ef) = RR $ \env -> ef (f env)
 
 -- ----------------------------------------
 -- error handling
@@ -148,7 +148,12 @@ eval' e = (unRR . eval) e M.empty -- start with an empty environment
 eval :: Expr -> Result Value
 eval (BLit b)          = return (B b)
 eval (ILit i)          = return (I i)
-eval (Var    x)        = undefined
+eval (Var    x)        =  do {ret <- asks $ M.lookup x; maybe (freeVar x) return ret}
+
+--						 do env <- ask
+--							let ret = lookup x env 
+--							in maybe (freeVar x) return ret
+
 eval (Unary  op e1)    = do v1  <- eval e1
                             mf1 op v1
 
@@ -161,7 +166,7 @@ eval (Cond   c e1 e2)  = do b <- evalBool c
                               then eval e1
                               else eval e2
 
-eval (Let x e1 e2)     = undefined
+eval (Let x e1 e2)     = do{ value <- eval e1; local (M.insert  x value) (eval e2)}
 
 evalBool :: Expr -> Result Bool
 evalBool e
