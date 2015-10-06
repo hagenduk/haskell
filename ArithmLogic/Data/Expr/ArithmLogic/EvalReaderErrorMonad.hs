@@ -79,21 +79,31 @@ type Env = Map Ident Value
 newtype Result a = RR { unRR :: Env -> ResVal a }
 
 instance Functor Result where
-  fmap = undefined
+  fmap f (RR ef) = RR $ \ env -> fmap f (ef env)
   
 instance Applicative Result where
   pure = return
   (<*>) = ap
 
 instance Monad Result where
-  return = undefined
-  (>>=)  = undefined
+  return a = RR $ \_env -> return a
+-- (>>=) :: Result a -> (a -> Result b) -> Result b
+-- m >>= a  = RR $ \env -> unRR (a (resVal (unRR m env))) env
+  a >>= f = RR $ \env -> do
+						 v <- unRR a env
+						 unRR (f v) env
+--  (RR ef)  >>= f = RR $ \ env -> do x <- ef env
+--								    let RR ef' = f x
+--								    ef' env
+
   
 instance MonadError EvalError Result where
   throwError e
-    = undefined
+--    = RR $ (\env -> E e) 
+	= RR $ \ _env -> throwError e
   catchError (RR ef) handler
-    = undefined
+    = RR $ \ env -> catchError (ef env)
+				  (\ e -> let RR ef' = handler e in ef' env)
 
 instance MonadReader Env Result where
   ask             = undefined
