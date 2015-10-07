@@ -53,7 +53,8 @@ isE (E _) = True
 isE _     = False
 
 instance Functor Result where
-  fmap = undefined
+  fmap f (R x) = R (map f x)
+  fmap _ (E e) = E e 
 
 instance Applicative Result where
   pure = return
@@ -75,8 +76,9 @@ instance Applicative Result where
 -- test case e11 in EvalSimple
 
 instance Monad Result where
-  return = undefined
-  (>>=)  = undefined
+  return = return
+  R x >>= f = undefined             
+  E e >>= _ = E e
 
 instance Alternative Result where
   empty = mzero
@@ -146,19 +148,21 @@ eval :: Expr -> Result Value
 eval (BLit b)          = return (B b)
 eval (ILit i)          = return (I i)
 eval (Var    x)        = freeVar x
-eval (Unary  op e1)    = undefined
+eval (Unary  op e1)    = do x <- eval e1
+                            mf1 op x
 eval (Binary And e1 e2)
-                       = undefined
+                       = eval (cond e1 e2 false)
 eval (Binary Or  e1 e2)
-                       = undefined
+                       = eval (cond e1 true e2)
 eval (Binary Impl e1 e2)
-                       = undefined
+                       = eval (cond (not' e1) true e2)
 eval (Binary Alt  e1 e2)   -- why this special case? Semantics of Alt?
                        = undefined
 eval (Binary op e1 e2)
   | isStrict op        = undefined
 eval (Binary op _ _)   = notImpl ("operator " ++ pretty op)
-eval (Cond   c e1 e2)  = undefined
+eval (Cond   c e1 e2)  = do x <- evalBool c
+                            if x then eval e1 else eval e2
 eval (Let _x _e1 _e2)  = notImpl "let expression"
 
 evalBool :: Expr -> Result Bool
