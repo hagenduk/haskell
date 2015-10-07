@@ -34,6 +34,7 @@ prop_balance t
 prop_balance' :: Tree Int -> Bool
 prop_balance' t
   = undefined
+-- maxDepth t <= ceiling ((logBase 2 (sizeTree t))) --logbase error.. aber irgendwie so
 
 -- ----------------------------------------
 
