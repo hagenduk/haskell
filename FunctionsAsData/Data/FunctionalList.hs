@@ -9,32 +9,35 @@ type List a = [a] -> [a]
 -- ----------------------------------------
 
 fromList        :: [a] -> List a
-fromList l      = undefined
+fromList l      = \xs -> l ++ xs
 
 toList          :: List a -> [a]
-toList l        = undefined
+toList l        = l []
 
 empty           :: List a
-empty           = undefined
+empty           = P.id
 
 singleton       :: a -> List a
-singleton e     = undefined
+singleton e     = fromList [e]
 
 -- (:) for functional lists
 cons            :: a -> List a -> List a
-cons e l        = undefined
+cons e l        = \xs -> e : l xs
 
 -- dual to cons
 snoc            :: List a -> a -> List a
-snoc l e        = undefined
+snoc l e        = append  l (singleton e)
 
 -- (++) for functional lists
 append          :: List a -> List a -> List a
-append l1 l2    = undefined
+append l1 l2    = \xs -> l1 (l2 xs)
 
 -- like concat for normal lists: foldr (++) []
-concat          :: [List a] -> List a
-concat          = undefined
+concat'          :: [List a] -> List a
+concat' = P.foldr (append) empty
+
+-- concat' []		= empty
+-- concat' (x:xs)   = append x (concat' xs)
 
 -- like map for normal lists: foldr ((:) . f) []
 map             :: (a -> b) -> List a -> List b
