@@ -17,6 +17,9 @@ substVars env (Unary op1 a) = Unary op1 (substVars env a)
 substVars env (Binary op2 a b) = Binary op2 (substVars env a) (substVars env b)
 
 freeVars :: Expr -> [Ident]
-freeVars  = undefined
+freeVars (Lit a) = []
+freeVars (Var a) = [a]
+freeVars (Unary op1 a) = freeVars a
+freeVars (Binary op1 a b) = Data.List.union (freeVars a) (freeVars b)
 
 -- ----------------------------------------
