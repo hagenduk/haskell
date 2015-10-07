@@ -22,4 +22,5 @@ freeVars (Var a) = [a]
 freeVars (Unary op1 a) = freeVars a
 freeVars (Binary op1 a b) = Data.List.union (freeVars a) (freeVars b)
 
+
 -- ----------------------------------------
