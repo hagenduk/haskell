@@ -27,6 +27,7 @@ prop_elem ps = and (map isIn ps)
 			isIn (P (x,y)) = all (`member` s) [x..y]
 
 
+
 -- ----------------------------------------
 --
 -- auxiliary data type for Arbitrary instance
