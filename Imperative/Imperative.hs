@@ -4,9 +4,9 @@ where
 import           Data.Expr.Imperative
 import qualified Data.Expr.Imperative.EvalStateErrorMonad    as S
 -- {-
-import qualified Data.Expr.Imperative.EvalIOStateErrorMonad  as O
-import qualified Data.Expr.Imperative.EvalStateErrorTrans    as ST
-import qualified Data.Expr.Imperative.EvalIOStateErrorTrans  as OT
+--import qualified Data.Expr.Imperative.EvalIOStateErrorMonad  as O
+--import qualified Data.Expr.Imperative.EvalStateErrorTrans    as ST
+--import qualified Data.Expr.Imperative.EvalIOStateErrorTrans  as OT
 -- -}
 import           Data.Pretty
 
@@ -49,7 +49,7 @@ eval1 = S.eval'
 pp1 :: Expr -> IO ()
 pp1 = putStrLn . pretty . eval1
 
--- {-
+{-
 eval2 :: Expr -> IO (O.ResVal O.Value, O.Store)
 eval2 = O.eval'
 
@@ -69,7 +69,7 @@ eval4 = OT.eval'
 pp4 :: Expr -> IO ()
 pp4 e = do res <- eval4 e
            putStrLn (pretty res)
--- -}
+-}
 
 
 

@@ -82,8 +82,8 @@ instance (Pretty a) => Pretty (ResVal a) where
 newtype Result a = RT { runResult :: Store -> (ResVal a, Store) }
 
 instance Functor Result where
-  fmap f (RT sf)
-    = undefined
+  fmap f sf
+    = do { x <- sf;  return (f x)}
       
 instance Applicative Result where
   pure  = return
@@ -91,24 +91,43 @@ instance Applicative Result where
 
 instance Monad Result where
   return x
-    = undefined
+    = RT $ \ s -> (return x, s)
 
-  RT sf >>= f
-    = undefined
+  (RT sf) >>= f
+      = RT $ \ st ->
+               let (rv, st') = sf st
+               in
+                case rv of
+                 E e -> (E e, st')
+                 R x -> let RT sf' = f x
+                        in
+                          sf' st'
+  
+--    = RT $ \ s -> do x <- sf
+--                     let (a,b) = x s in
+--                      do a1 <- a
+--                         runResult (f a1) s
 
 instance MonadError EvalError Result where
   throwError e
-    = undefined
+    = RT $ \ st -> (throwError e, st)
   
   catchError (RT sf) handler
-    = undefined
+    = RT $ \ st ->
+			let (rv, st') = sf st
+            in
+              case rv of
+                E e -> let RT sf' = handler e
+                       in
+                         sf' st'
+                R _ -> (rv, st')
 
 instance MonadState Store Result where
+-- :: Store -> Result (Resval, Store) 
   get
-    = undefined
-
+    = RT $ \ st -> (return st ,st)
   put st
-    = undefined
+    = RT $ \ st' -> (return (), st)
   
 -- ----------------------------------------
 --
@@ -156,7 +175,6 @@ boolExpected = throwError . ValErr "Bool"
 
 intExpected :: Value -> Result a
 intExpected  = throwError . ValErr "Integer"
-
 notImpl :: String -> Result a
 notImpl = throwError . NotImpl
 
@@ -178,33 +196,44 @@ eval :: Expr -> Result Value
 eval (BLit b)          = return (B b)
 eval (ILit i)          = return (I i)
 
-eval (Var    i)        = undefined
+eval (Var    i)        = readVar i
                          
 eval (Unary preOp e)
   | preOp `elem` [PreIncr, PreDecr]
-                       = do undefined
+                       = do ident <- evalLValue e
+                            res1 <- readVar ident
+                            res2 <- mf1 preOp res1
+                            writeVar ident res2
+                            return res2
 
 eval (Unary postOp e)
   | postOp `elem` [PostIncr, PostDecr]
-                       = do undefined  -- use evalLValue, readVar, writeVar
+                       = do ident <- evalLValue e
+                            res1 <- readVar ident
+                            res2 <- mf1 postOp res1
+                            writeVar ident res2
+                            return res1  -- use evalLValue, readVar, writeVar
                         
 eval (Unary  op e1)    = do v1  <- eval e1
                             mf1 op v1
 
 eval (Binary Assign lhs rhs)
-                       = do undefined  -- use evalLValue, writeVar
-
+                       = do ident <- evalLValue lhs  -- use evalLValue, writeVar
+                            res1 <- eval rhs
+                            writeVar ident res1
+                            return res1
 eval (Binary Seq e1 e2)
-                       = do undefined
+                       = do x <- eval e1
+                            eval e2
                             
 eval (Binary And e1 e2)
                        = eval (cond e1 e2 false)
 
 eval (Binary Or  e1 e2)
-                       = undefined -- similar to And
+                       = eval (cond e1 true e2) -- similar to And, if then else
 
 eval (Binary Impl e1 e2)
-                       = undefined -- similar to And
+                       = eval (cond (not' e1) true e2) -- similar to And
 
 eval (Binary op e1 e2)
   | isStrict op        = do v1 <- eval e1
@@ -218,7 +247,10 @@ eval (Cond   c e1 e2)  = do b <- evalBool c
                               then eval e1
                               else eval e2
 
-eval e@(While c body)   = do undefined
+eval e@(While c body)   = do b <- evalBool c
+                             if b
+                                then eval body >> eval e
+                                else return (B b)
 
 eval (Read _)           = notImpl "read"  -- needs IO
 eval (Write _ _)        = notImpl "write" -- needs IO
@@ -259,9 +291,9 @@ mf1 UPlus      = op1II id
 mf1 UMinus     = op1II (0 -)
 mf1 Signum     = op1II signum
 mf1 PreIncr    = flip (mf2 Plus ) (I 1)
-mf1 PreDecr    = undefined -- similar to PreIncr
-mf1 PostIncr   = undefined -- similar to PreIncr
-mf1 PostDecr   = undefined -- similar to PreIncr
+mf1 PreDecr    = flip (mf2 Minus ) (I 1) -- similar to PreIncr
+mf1 PostIncr   = flip (mf2 Plus ) (I 1) -- similar to PreIncr
+mf1 PostDecr   = flip (mf2 Minus ) (I 1) -- similar to PreIncr
 -- mf1 op         = \ _ -> notImpl (show op)
   
 op1BB :: (Bool -> Bool) -> MF1
