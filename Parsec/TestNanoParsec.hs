@@ -56,31 +56,53 @@ eval ex = case ex of
 
 -- parse an integer literal
 int :: Parser Expr
-int = undefined
+int = do xs <- token number
+         return (Lit (read xs))
 
 expr :: Parser Expr
-expr = undefined
+expr = chainl1 term addop
+
+-- term { addop term }
 
 term :: Parser Expr
-term = undefined
+term = chainl1 factor mulop
+
+-- factor { mulop factor }
 
 factor :: Parser Expr
-factor = undefined
+factor = int <|> do parens expr
+--                    oneOf ['(']
+--                    spaces
+--                    e <- expr
+--                    spaces
+--                    oneOf [')']
+--                    spaces
+--                    return e
+
+-- "(" expr ")" | number
 
 infixOp :: String -> (a -> a -> a) -> Parser (a -> a -> a)
-infixOp = undefined
+infixOp s op = do reserved s
+                  spaces
+                  return op
 
 addop :: Parser (Expr -> Expr -> Expr)
-addop = undefined
+addop = do x <- oneOf ['+','-']
+           spaces
+           case x of
+            '+' -> return Add
+            '-' -> return Sub
 
 mulop :: Parser (Expr -> Expr -> Expr)
-mulop = undefined
-
+mulop = do x <- oneOf ['*']
+           spaces
+           return Mul
+            
 -- ----------------------------------------
 -- the main prog
 
 parse :: String -> Either String Expr
-parse = runParser expr
+parse = runParser (spaces >> expr)
 
 main :: IO ()
 main = do
